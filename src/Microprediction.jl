@@ -125,7 +125,7 @@ end
 """
     get_lagged_values(config, stream_name)
 
-Return lagged values of stream
+Return lagged values of stream.
 
 """
 function get_lagged_values(config::Config, stream_name::String)::Array{Number}
@@ -136,7 +136,7 @@ end
 """
     get_lagged_times(config, stream_name)
 
-Return lagged times of a time series
+Return lagged times of a time series.
 
 """
 function get_lagged_times(config::Config, stream_name::String)::Array{Number}
@@ -155,6 +155,5 @@ function get_delayed_value(config::Config, stream_name::String, delay::Number=co
     JSON.parse(String(r.body))
 end
 
-greet() = print("Hello World!")
 
 end # module

@@ -71,6 +71,12 @@ git-tree-sha1 = "a0cb0d489819fa7ea5f9fa84c7e7eba19d8073af"
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
 version = "2.16.6+1"
 
+[[Microprediction]]
+deps = ["Documenter", "HTTP", "JSON"]
+path = "/Users/rusty/Development/microprediction-julia/Microprediction"
+uuid = "ebaa5f0b-dc11-48a5-a8ef-dd4c5640c3b9"
+version = "0.1.0"
+
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
