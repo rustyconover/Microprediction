@@ -5,25 +5,39 @@ using Microprediction
 
 c = Microprediction.Config()
 
-println(typeof(c))
-
-@test c !== Nothing
-
-println(typeof(c))
+@test typeof(c) == Microprediction.Config
 
 test_stream_name = "emojitracker-twitter-grinning_face_with_smiling_eyes.json"
 
-println(Microprediction.get_current_value(c, test_stream_name))
-println(Microprediction.get_current_value(c, "nonexisting-string.json"))
+@test Microprediction.get_current_value(c, test_stream_name) != nothing
+@test Microprediction.get_current_value(c, "nonexisting-string.json") == nothing
 
-println(Microprediction.get_leaderboard(c, test_stream_name, 70))
-println(Microprediction.get_overall(c))
-println(Microprediction.get_sponsors(c))
-println(Microprediction.get_budgets(c))
+@test Microprediction.get_leaderboard(c, test_stream_name, 70) != nothing
 
-println(Microprediction.get_summary(c, test_stream_name))
+@test Microprediction.get_overall(c) != nothing
+@test Microprediction.get_sponsors(c) != nothing
+@test Microprediction.get_budgets(c) != nothing
 
-println(Microprediction.get_lagged_values(c, test_stream_name))
-println(Microprediction.get_lagged_times(c, test_stream_name))
+@test Microprediction.get_summary(c, test_stream_name) != nothing
 
-println(Microprediction.get_delayed_value(c, test_stream_name))
+@test Microprediction.get_lagged_values(c, test_stream_name) != nothing
+@test Microprediction.get_lagged_times(c, test_stream_name) != nothing
+
+@test Microprediction.get_delayed_value(c, test_stream_name) != nothing
+
+write_config = Microprediction.Config("82457d14c37df7043cb5d6c0b53bdb30")
+
+@test write_config.writeKey != Nothing
+
+# Test writing to a stream
+
+Microprediction.submit(write_config, "emojitracker-twitter-winking_face.json",
+    fill(42.0, (1, 225)))
+
+
+
+# println(Microprediction.get_balance(write_config))
+
+# times = Microprediction.get_lagged_times(c, test_stream_name)
+# values = Microprediction.get_lagged_values(c, test_stream_name)
+

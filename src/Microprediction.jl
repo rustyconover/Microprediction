@@ -6,10 +6,8 @@ using JSON
 struct Config
     "The base URL of the microprediction.org API"
     baseUrl::String
-
     "The failover URL of the microprediction.org API"
     failoverBaseUrl::String
-
     "The number of predictions that should be returned from the predictive distribution."
     numPredictions::Int64
     "An array of delays for forecasts"
@@ -18,8 +16,16 @@ struct Config
     minBalance::Float64
     "The minimum length of a key if it is going to write data"
     minLen::Int64
+    "The write key to use"
+    writeKey::Union{Nothing,String}
 
+    "Construct a new Config without a write key"
     function Config()
+        Config(nothing)
+    end
+
+    "Construct a new Config using a write_key"
+    function Config(write_key)
         baseUrl = "http://api.microprediction.org"
         failoverBaseUrl = "http://stableapi.microprediction.org"
 
@@ -34,13 +40,8 @@ struct Config
         minLen = configData["min_len"]
         numPredictions = configData["num_predictions"]
 
-        new(baseUrl, failoverBaseUrl, numPredictions, delays, minBalance, minLen)
+        new(baseUrl, failoverBaseUrl, numPredictions, delays, minBalance, minLen, write_key)
     end
-end
-
-struct MicroReader
-    config::Config
-
 end
 
 """
@@ -48,6 +49,9 @@ end
 
 Return the latest value from the specified stream. If the stream is
 unknown return nothing.
+
+Stream name can be the live data name, or example cop.json or it
+can be prefixed such as, lagged_values::cop.json or delayed::70::cop.json
 
 """
 function get_current_value(config::Config, stream_name::String)::Union{Number,Nothing}
@@ -154,6 +158,142 @@ function get_delayed_value(config::Config, stream_name::String, delay::Number=co
     r = HTTP.request("GET", "$(config.baseUrl)/live/delayed::$(delay)::$(stream_name)")
     JSON.parse(String(r.body))
 end
+
+"""
+    write_to_stream(config, stream_name, value)
+
+Add a value to a stream, if the stream does not exist it is created.
+
+"""
+function write_to_stream(config::Config, stream_name::String, value::Number)
+    r = HTTP.request("PUT", "$(config.baseUrl)/live/$(stream_name)";
+    query=Dict(
+        "write_key" => config.writeKey,
+        value => value))
+    JSON.parse(String(r.body))
+end
+
+"""
+    delete_stream(config, stream_name)
+
+Delete a stream
+
+"""
+function delete_stream(config::Config, stream_name::String)
+    r = HTTP.request("DELETE", "$(config.baseUrl)/live/$(stream_name)";
+    query=Dict("write_key" => config.writeKey))
+    JSON.parse(String(r.body))
+end
+
+
+"""
+    touch_stream(config, stream_name)
+
+Modify the time to live for a stream, prevent a stream with no
+recent updates from being deleted.
+
+"""
+function touch_stream(config::Config, stream_name::String)
+    r = HTTP.request("PATCH", "$(config.baseUrl)/live/$(stream_name)";
+    query=Dict("write_key" => config.writeKey))
+    JSON.parse(String(r.body))
+end
+
+"""
+    get_errors(config)
+
+Return the errors for the client.
+
+"""
+function get_errors(config::Config)
+    r = HTTP.request("GET", "$(config.baseUrl)/errors/$(config.writeKey)");
+    JSON.parse(String(r.body))
+end
+
+"""
+    get_warnings(config)
+
+Return the warnings for the client.
+
+"""
+function get_warnings(config::Config)
+    r = HTTP.request("GET", "$(config.baseUrl)/warnings/$(config.writeKey)");
+    JSON.parse(String(r.body))
+end
+
+"""
+    delete_errors(config)
+
+Clear all errors for the client
+
+"""
+function delete_errors(config::Config)
+    r = HTTP.request("DELETE", "$(config.baseUrl)/errors/$(config.writeKey)");
+    JSON.parse(String(r.body))
+end
+
+
+"""
+    delete_warnings(config)
+
+Clear all of the warnings for the client
+
+"""
+function delete_warnings(config::Config)
+    r = HTTP.request("DELETE", "$(config.baseUrl)/warnings/$(config.writeKey)");
+    JSON.parse(String(r.body))
+end
+
+"""
+    get_balance(config)
+
+Return the balance associated with the write key
+
+"""
+function get_balance(config::Config)::Number
+    r = HTTP.request("GET", "$(config.baseUrl)/balance/$(config.writeKey)");
+    JSON.parse(String(r.body))
+end
+
+"""
+    get_active(config)
+
+Return the active submissions to stream that have predictions that
+could be judged.
+
+"""
+function get_active(config::Config)::Array{String}
+    r = HTTP.request("GET", "$(config.baseUrl)/active/$(config.writeKey)");
+    JSON.parse(String(r.body))
+end
+
+
+"""
+    submit(config)
+
+Submit a prediction scenerio
+
+"""
+function submit(config::Config, stream_name::String, values::Array{Float64}, delay::Number=config.delays[1])
+
+    if length(values) != config.numPredictions
+        throw(DimensionMismatch("Number of values must equal $(config.numPredictions)"))
+    end
+
+    values = join(values, ",")
+
+    r = HTTP.request("PUT", "$(config.baseUrl)/submit/$(stream_name)";
+    query=Dict(
+        "write_key" => config.writeKey,
+        "delay" => delay,
+        "values" => values
+    ))
+    JSON.parse(String(r.body))
+end
+
+
+
+
 
 
 end # module
