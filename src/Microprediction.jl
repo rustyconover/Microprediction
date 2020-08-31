@@ -54,7 +54,7 @@ Stream name can be the live data name, or example cop.json or it
 can be prefixed such as, lagged_values::cop.json or delayed::70::cop.json
 
 """
-function get_current_value(config::Config, stream_name::String)::Union{Number,Nothing}
+function get_current_value(config::Config, stream_name::String)::Union{Float64,Nothing}
     r = HTTP.request("GET", "$(config.baseUrl)/live/$(stream_name)");
     value = JSON.parse(String(r.body))
     if value == nothing
@@ -71,7 +71,7 @@ Return the leaderboard for the stream with the specified delay.  If the
 stream is unknown return nothing
 
 """
-function get_leaderboard(config::Config, stream_name::String, delay::Number)::Union{Nothing,Dict{String,Number}}
+function get_leaderboard(config::Config, stream_name::String, delay::Number)::Union{Nothing,Dict{String,Float64}}
     r = HTTP.request("GET", "$(config.baseUrl)/leaderboards/$(stream_name)"; query=Dict("delay" => delay))
     return JSON.parse(String(r.body))
 end
@@ -83,7 +83,7 @@ end
 Return the overall leaderboard.
 
 """
-function get_overall(config::Config)::Dict{String,Number}
+function get_overall(config::Config)::Dict{String,Float64}
     r = HTTP.request("GET", "$(config.baseUrl)/overall")
     return JSON.parse(String(r.body))
 end
@@ -106,7 +106,7 @@ end
 Return the budgets of existing streams.
 
 """
-function get_budgets(config::Config)::Dict{String,Number}
+function get_budgets(config::Config)::Dict{String,Float64}
     r = HTTP.request("GET", "$(config.baseUrl)/budgets/")
     return JSON.parse(String(r.body))
 end
@@ -129,10 +129,11 @@ end
 """
     get_lagged_values(config, stream_name)
 
-Return lagged values of stream.
+Return lagged values of stream.  The newest values are placed at the start
+of the result array.
 
 """
-function get_lagged_values(config::Config, stream_name::String)::Array{Number}
+function get_lagged_values(config::Config, stream_name::String)::Array{Float64}
     r = HTTP.request("GET", "$(config.baseUrl)/live/lagged_values::$(stream_name)")
     JSON.parse(String(r.body))
 end
@@ -140,10 +141,11 @@ end
 """
     get_lagged_times(config, stream_name)
 
-Return lagged times of a time series.
+Return lagged times of a time series. The newest times are placed at the start
+of the result array.  The values are a Float64 of Unix epoch times.
 
 """
-function get_lagged_times(config::Config, stream_name::String)::Array{Number}
+function get_lagged_times(config::Config, stream_name::String)::Array{Float64}
     r = HTTP.request("GET", "$(config.baseUrl)/live/lagged_times::$(stream_name)")
     JSON.parse(String(r.body))
 end
@@ -154,7 +156,7 @@ end
 Return a quarentined value from a stream.
 
 """
-function get_delayed_value(config::Config, stream_name::String, delay::Number=config.delays[1])::Number
+function get_delayed_value(config::Config, stream_name::String, delay::Number=config.delays[1])::Float64
     r = HTTP.request("GET", "$(config.baseUrl)/live/delayed::$(delay)::$(stream_name)")
     JSON.parse(String(r.body))
 end
@@ -247,10 +249,11 @@ end
 """
     get_balance(config)
 
-Return the balance associated with the write key
+Return the balance associated with the write key that was specified
+in the configuration.
 
 """
-function get_balance(config::Config)::Number
+function get_balance(config::Config)::Float64
     r = HTTP.request("GET", "$(config.baseUrl)/balance/$(config.writeKey)");
     JSON.parse(String(r.body))
 end
@@ -271,11 +274,10 @@ end
 """
     submit(config)
 
-Submit a prediction scenerio
+Submit a prediction scenerio to a stream and delay horizon.
 
 """
 function submit(config::Config, stream_name::String, values::Array{Float64}, delay::Number=config.delays[1])
-
     if length(values) != config.numPredictions
         throw(DimensionMismatch("Number of values must equal $(config.numPredictions)"))
     end
@@ -290,10 +292,6 @@ function submit(config::Config, stream_name::String, values::Array{Float64}, del
     ))
     JSON.parse(String(r.body))
 end
-
-
-
-
 
 
 end # module

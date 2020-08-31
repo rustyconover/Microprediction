@@ -1,5 +1,3 @@
-println("testing")
-
 using Test
 using Microprediction
 
