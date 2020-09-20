@@ -134,7 +134,7 @@ Return lagged time and values of a time series. The newest times are placed at
 the start of the result array.  The values are a Float64 of Unix epoch times.
 
 """
-function get_lagged(config::Config, stream_name::String)::TimeArray{Float64,1,DateTime,Array{Float64,1}
+function get_lagged(config::Config, stream_name::String)::TimeArray{Float64,1,DateTime,Array{Float64,1}}
     r = HTTP.request("GET", "$(config.baseUrl)/live/lagged::$(stream_name)")
     data = JSON.parse(String(r.body))
     live_data = permutedims(reshape([(convert(Array{Array{Float64}}, data)...)...], (2, 1001)))
