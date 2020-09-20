@@ -18,8 +18,7 @@ test_stream_name = "emojitracker-twitter-grinning_face_with_smiling_eyes.json"
 
 @test Microprediction.get_summary(c, test_stream_name) != nothing
 
-@test Microprediction.get_lagged_values(c, test_stream_name) != nothing
-@test Microprediction.get_lagged_times(c, test_stream_name) != nothing
+@test Microprediction.get_lagged(c, test_stream_name) != nothing
 
 @test Microprediction.get_delayed_value(c, test_stream_name) != nothing
 
@@ -31,11 +30,4 @@ write_config = Microprediction.Config("82457d14c37df7043cb5d6c0b53bdb30")
 
 Microprediction.submit(write_config, "emojitracker-twitter-winking_face.json",
     fill(42.0, (1, 225)))
-
-
-
-# println(Microprediction.get_balance(write_config))
-
-# times = Microprediction.get_lagged_times(c, test_stream_name)
-# values = Microprediction.get_lagged_values(c, test_stream_name)
 
