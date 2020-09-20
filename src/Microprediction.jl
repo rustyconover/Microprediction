@@ -2,6 +2,8 @@ module Microprediction
 
 using HTTP
 using JSON
+using TimeSeries
+
 
 struct Config
     "The base URL of the microprediction.org API"
@@ -125,30 +127,23 @@ function get_summary(config::Config, stream_name::String)
     return data
 end
 
+"""
+    get_lagged(config, stream_name)
+
+Return lagged time and values of a time series. The newest times are placed at 
+the start of the result array.  The values are a Float64 of Unix epoch times.
 
 """
-    get_lagged_values(config, stream_name)
-
-Return lagged values of stream.  The newest values are placed at the start
-of the result array.
-
-"""
-function get_lagged_values(config::Config, stream_name::String)::Array{Float64}
-    r = HTTP.request("GET", "$(config.baseUrl)/live/lagged_values::$(stream_name)")
-    JSON.parse(String(r.body))
+function get_lagged(config::Config, stream_name::String)::TimeArray{Float64,1,DateTime,Array{Float64,1}
+    r = HTTP.request("GET", "$(config.baseUrl)/live/lagged::$(stream_name)")
+    data = JSON.parse(String(r.body))
+    live_data = permutedims(reshape([(convert(Array{Array{Float64}}, data)...)...], (2, 1001)))
+    live_dates = Dates.unix2datetime.(live_data[:, 1])
+    live_values = live_data[:, 2]
+    TimeArray(live_dates, live_values)
 end
 
-"""
-    get_lagged_times(config, stream_name)
 
-Return lagged times of a time series. The newest times are placed at the start
-of the result array.  The values are a Float64 of Unix epoch times.
-
-"""
-function get_lagged_times(config::Config, stream_name::String)::Array{Float64}
-    r = HTTP.request("GET", "$(config.baseUrl)/live/lagged_times::$(stream_name)")
-    JSON.parse(String(r.body))
-end
 
 """
     get_delayed_value(config, stream_name[, delay])
@@ -292,6 +287,5 @@ function submit(config::Config, stream_name::String, values::Array{Float64}, del
     ))
     JSON.parse(String(r.body))
 end
-
 
 end # module
