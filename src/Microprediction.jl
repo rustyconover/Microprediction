@@ -138,8 +138,7 @@ function get_lagged(config::Config, stream_name::String)::TimeArray{Float64,1,Da
     r = HTTP.request("GET", "$(config.baseUrl)/live/lagged::$(stream_name)")
     data = JSON.parse(String(r.body))
     live_data = permutedims(reshape(collect(Iterators.Flatten(data)), (2, :)))
-
-    live_data = live_data[:, sortperm(live_data[1, :])]
+    live_data = live_data[:, sortperm(live_data[:, 1])]
     live_dates = Dates.unix2datetime.(live_data[:, 1])
     live_values = live_data[:, 2]
     TimeArray(live_dates, live_values)
