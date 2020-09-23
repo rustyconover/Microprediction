@@ -6,7 +6,7 @@ using TimeSeries
 
 struct Transaction 
     """A unique identifier of the transaction"""
-    transaction_id::String
+    transaction_id::AbstractString
     "The time the settlement happened"
     settlement_time::DateTime
     "The amount changed"
@@ -14,7 +14,7 @@ struct Transaction
     "The budget of the stream"
     budget::Float64
     "The name of the stream"
-    stream::String
+    stream::AbstractString
     "The prediction horizon or delay"
     delay::Int64
     "The actual value of the stream"
@@ -24,12 +24,12 @@ struct Transaction
     "Total submissions that were close"
     submissions_close::Int64
     "Stream owner code"
-    stream_owner_code::String
+    stream_owner_code::AbstractString
     "Recipient code"
-    recipient_code::String
+    recipient_code::AbstractString
 
     "Construct a new Transaction"
-    function Transaction(transaction_id::String, data::Dict{String,Any})
+    function Transaction(transaction_id::AbstractString, data::Dict{AbstractString,Any})
         new(transaction_id,
         DateTime(replace(data["settlement_time"], r"\.\d*$" => ""), Dates.DateFormat("yyyy-mm-dd HH:MM:SS.s")),
         parse(Float64, data["amount"]),
@@ -48,11 +48,11 @@ struct TransferTransaction
     "The time the settlement happened"
     settlement_time::DateTime
     "The type of transaction"
-    type::String
+    type::AbstractString
     "The public source key of the transaction"
-    source::String
+    source::AbstractString
     "The public recipient key of the transactions"
-    recipient::String
+    recipient::AbstractString
     "The maximum amount that this transaction could give"
     max_to_give::Float64
     "The maximum amount the source key could receive"
@@ -64,7 +64,7 @@ struct TransferTransaction
     "A flag that indicates if the transaction was successful."
     success::Bool
     "A reason for why the transaction could not be successful"
-    reason::String
+    reason::AbstractString
 
 
 end
@@ -72,9 +72,9 @@ end
 
 struct Config
     "The base URL of the microprediction.org API"
-    baseUrl::String
+    baseUrl::AbstractString
     "The failover URL of the microprediction.org API"
-    failoverBaseUrl::String
+    failoverBaseUrl::AbstractString
     "The number of predictions that should be returned from the predictive distribution."
     numPredictions::Int64
     "An array of delays for forecasts"
@@ -84,7 +84,7 @@ struct Config
     "The minimum length of a key if it is going to write data"
     minLen::Int64
     "The write key to use"
-    writeKey::Union{Nothing,String}
+    writeKey::Union{Nothing,AbstractString}
 
     "Construct a new Config without a write key"
     function Config()
@@ -121,7 +121,7 @@ Stream name can be the live data name, or example cop.json or it
 can be prefixed such as, lagged_values::cop.json or delayed::70::cop.json
 
 """
-function get_current_value(config::Config, stream_name::String)::Union{Float64,Nothing}
+function get_current_value(config::Config, stream_name::AbstractString)::Union{Float64,Nothing}
     r = HTTP.request("GET", "$(config.baseUrl)/live/$(stream_name)");
     value = JSON.parse(String(r.body))
     if value == nothing
@@ -138,7 +138,7 @@ Return the leaderboard for the stream with the specified delay.  If the
 stream is unknown return nothing
 
 """
-function get_leaderboard(config::Config, stream_name::String, delay::Number)::Union{Nothing,Dict{String,Float64}}
+function get_leaderboard(config::Config, stream_name::AbstractString, delay::Number)::Union{Nothing,Dict{AbstractString,Float64}}
     r = HTTP.request("GET", "$(config.baseUrl)/leaderboards/$(stream_name)"; query=Dict("delay" => delay))
     return JSON.parse(String(r.body))
 end
@@ -150,7 +150,7 @@ end
 Return the overall leaderboard.
 
 """
-function get_overall(config::Config)::Dict{String,Float64}
+function get_overall(config::Config)::Dict{AbstractString,Float64}
     r = HTTP.request("GET", "$(config.baseUrl)/overall")
     return JSON.parse(String(r.body))
 end
@@ -162,7 +162,7 @@ end
 Return the sponsors of streams.
 
 """
-function get_sponsors(config::Config)::Dict{String,String}
+function get_sponsors(config::Config)::Dict{AbstractString,String}
     r = HTTP.request("GET", "$(config.baseUrl)/sponsors/")
     return JSON.parse(String(r.body))
 end
@@ -173,7 +173,7 @@ end
 Return the budgets of existing streams.
 
 """
-function get_budgets(config::Config)::Dict{String,Float64}
+function get_budgets(config::Config)::Dict{AbstractString,Float64}
     r = HTTP.request("GET", "$(config.baseUrl)/budgets/")
     return JSON.parse(String(r.body))
 end
@@ -185,7 +185,7 @@ end
 Return the summary information about a stream
 
 """
-function get_summary(config::Config, stream_name::String)
+function get_summary(config::Config, stream_name::AbstractString)
     r = HTTP.request("GET", "$(config.baseUrl)/live/summary::$(stream_name)")
     data = JSON.parse(String(r.body))
 
@@ -199,7 +199,7 @@ Return lagged time and values of a time series. The newest times are placed at
 the start of the result array.  The values are a Float64 of Unix epoch times.
 
 """
-function get_lagged(config::Config, stream_name::String)::TimeArray{Float64,1,DateTime,Array{Float64,1}}
+function get_lagged(config::Config, stream_name::AbstractString)::TimeArray{Float64,1,DateTime,Array{Float64,1}}
     r = HTTP.request("GET", "$(config.baseUrl)/live/lagged::$(stream_name)")
     data = JSON.parse(String(r.body))
     live_data = permutedims(reshape(collect(Iterators.Flatten(data)), (2, :)))
@@ -217,7 +217,7 @@ end
 Return a quarentined value from a stream.
 
 """
-function get_delayed_value(config::Config, stream_name::String, delay::Number=config.delays[1])::Float64
+function get_delayed_value(config::Config, stream_name::AbstractString, delay::Number=config.delays[1])::Float64
     r = HTTP.request("GET", "$(config.baseUrl)/live/delayed::$(delay)::$(stream_name)")
     JSON.parse(String(r.body))
 end
@@ -228,7 +228,7 @@ end
 Add a value to a stream, if the stream does not exist it is created.
 
 """
-function write_to_stream(config::Config, stream_name::String, value::Number)
+function write_to_stream(config::Config, stream_name::AbstractString, value::Number)
     r = HTTP.request("PUT", "$(config.baseUrl)/live/$(stream_name)";
     query=Dict(
         "write_key" => config.writeKey,
@@ -242,7 +242,7 @@ end
 Delete a stream
 
 """
-function delete_stream(config::Config, stream_name::String)
+function delete_stream(config::Config, stream_name::AbstractString)
     r = HTTP.request("DELETE", "$(config.baseUrl)/live/$(stream_name)";
     query=Dict("write_key" => config.writeKey))
     JSON.parse(String(r.body))
@@ -256,7 +256,7 @@ Modify the time to live for a stream, prevent a stream with no
 recent updates from being deleted.
 
 """
-function touch_stream(config::Config, stream_name::String)
+function touch_stream(config::Config, stream_name::AbstractString)
     r = HTTP.request("PATCH", "$(config.baseUrl)/live/$(stream_name)";
     query=Dict("write_key" => config.writeKey))
     JSON.parse(String(r.body))
@@ -326,7 +326,7 @@ Return the active submissions to stream that have predictions that
 could be judged.
 
 """
-function get_active(config::Config)::Array{String}
+function get_active(config::Config)::Array{AbstractString}
     r = HTTP.request("GET", "$(config.baseUrl)/active/$(config.writeKey)");
     JSON.parse(String(r.body))
 end
@@ -338,7 +338,7 @@ end
 Submit a prediction scenerio to a stream and delay horizon.
 
 """
-function submit(config::Config, stream_name::String, values::Array{Float64}, delay::Number=config.delays[1])
+function submit(config::Config, stream_name::AbstractString, values::Array{Float64}, delay::Number=config.delays[1])
     if length(values) != config.numPredictions
         throw(DimensionMismatch("Number of values must equal $(config.numPredictions)"))
     end
@@ -360,7 +360,7 @@ end
 Cancel a previously submitted prediction
 
 """
-function cancel(config::Config, stream_name::String, delay::Number)
+function cancel(config::Config, stream_name::AbstractString, delay::Number)
     r = HTTP.request("DELETE", "$(config.baseUrl)/submit/$(stream_name)";
     query=Dict(
         "write_key" => config.writeKey,
@@ -384,12 +384,12 @@ function get_transactions(config::Config)::Array{Transaction}
 end
 
 struct PerformanceRecord
-    stream_name::String
+    stream_name::AbstractString
     delay::Int64
     performance::Float64
 
     "Construct a new PerformanceRecord"
-    function PerformanceRecord(stream_name::String, delay::Int64, performance)
+    function PerformanceRecord(stream_name::AbstractString, delay::Int64, performance)
         new(stream_name,
         delay,
         performance)
