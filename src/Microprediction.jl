@@ -355,6 +355,22 @@ function submit(config::Config, stream_name::String, values::Array{Float64}, del
 end
 
 """
+    cancel()
+
+Cancel a previously submitted prediction
+
+"""
+function cancel(config::Config, stream_name::String, delay::Number)
+    r = HTTP.request("DELETE", "$(config.baseUrl)/submit/$(stream_name)";
+    query=Dict(
+        "write_key" => config.writeKey,
+        "delay" => delay
+    ))
+    JSON.parse(String(r.body))    
+end
+
+
+"""
     get_transactions()
 
 Return transactions associated with the specified write_key
@@ -366,5 +382,6 @@ function get_transactions(config::Config)::Array{Transaction}
     parsed = map(x -> Transaction(x...), data)
     return parsed
 end
+
 
 end # module
