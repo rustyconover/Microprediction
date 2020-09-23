@@ -383,5 +383,35 @@ function get_transactions(config::Config)::Array{Transaction}
     return parsed
 end
 
+struct PerformanceRecord
+    stream_name::String
+    delay::Int64
+    performance::Float64
+
+    "Construct a new PerformanceRecord"
+    function PerformanceRecord(stream_name::String, delay::Int64, performance)
+        new(stream_name,
+        delay,
+        performance)
+    end
+end
+
+"""
+    get_performance()
+
+Return the current performance for the specified write_key
+
+"""
+function get_performance(config::Config)::Array{PerformanceRecord} 
+    r = HTTP.request("GET", "$(config.baseUrl)/performance/$(config.writeKey)");
+    data = JSON.parse(String(r.body))
+    result = [];
+    for (key, value) in data
+        raw_delay, stream_name = split(key, "::")
+        delay = parse(Int64, raw_delay)
+        push!(result, PerformanceRecord(stream_name, delay, value))
+    end
+    return result
+end
 
 end # module
