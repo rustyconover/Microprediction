@@ -28,6 +28,7 @@ write_config = Microprediction.Config("82457d14c37df7043cb5d6c0b53bdb30")
 
 # Test writing to a stream
 
-Microprediction.submit(write_config, "emojitracker-twitter-winking_face.json",
-    fill(42.0, (1, 225)))
+#Microprediction.submit(write_config, "emojitracker-twitter-winking_face.json",
+#    fill(42.0, (1, 225)))
 
+@test Microprediction.get_transactions(c) != nothing

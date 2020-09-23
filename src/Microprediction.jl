@@ -4,6 +4,71 @@ using HTTP
 using JSON
 using TimeSeries
 
+struct Transaction 
+    """A unique identifier of the transaction"""
+    transaction_id::String
+    "The time the settlement happened"
+    settlement_time::DateTime
+    "The amount changed"
+    amount::Float64
+    "The budget of the stream"
+    budget::Float64
+    "The name of the stream"
+    stream::String
+    "The prediction horizon or delay"
+    delay::Int64
+    "The actual value of the stream"
+    value::Float64
+    "Total submissions received"
+    submissions_count::Int64
+    "Total submissions that were close"
+    submissions_close::Int64
+    "Stream owner code"
+    stream_owner_code::String
+    "Recipient code"
+    recipient_code::String
+
+    "Construct a new Transaction"
+    function Transaction(transaction_id::String, data::Dict{String,Any})
+        new(transaction_id,
+        DateTime(replace(data["settlement_time"], r"\.\d*$" => ""), Dates.DateFormat("yyyy-mm-dd HH:MM:SS.s")),
+        parse(Float64, data["amount"]),
+        parse(Float64, data["budget"]),
+        data["stream"],
+        parse(Int64, data["delay"]),
+        parse(Float64, data["value"]),
+        parse(Int64, data["submissions_count"]),
+        parse(Int64, data["submissions_close"]),
+        data["stream_owner_code"],
+        data["recipient_code"])
+    end
+end
+
+struct TransferTransaction 
+    "The time the settlement happened"
+    settlement_time::DateTime
+    "The type of transaction"
+    type::String
+    "The public source key of the transaction"
+    source::String
+    "The public recipient key of the transactions"
+    recipient::String
+    "The maximum amount that this transaction could give"
+    max_to_give::Float64
+    "The maximum amount the source key could receive"
+    max_to_receive::Float64
+    "The amount given"
+    given::Float64
+    "The amount received"
+    received::Float64
+    "A flag that indicates if the transaction was successful."
+    success::Bool
+    "A reason for why the transaction could not be successful"
+    reason::String
+
+
+end
+    
 
 struct Config
     "The base URL of the microprediction.org API"
@@ -287,6 +352,19 @@ function submit(config::Config, stream_name::String, values::Array{Float64}, del
         "values" => values
     ))
     JSON.parse(String(r.body))
+end
+
+"""
+    get_transactions()
+
+Return transactions associated with the specified write_key
+
+"""
+function get_transactions(config::Config)::Array{Transaction}
+    r = HTTP.request("GET", "$(config.baseUrl)/transactions/$(config.writeKey)/");
+    data = JSON.parse(String(r.body))
+    parsed = map(x -> Transaction(x...), data)
+    return parsed
 end
 
 end # module
